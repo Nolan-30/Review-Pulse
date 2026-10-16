@@ -1,0 +1,76 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  locations     Location[]
+  createdAt     DateTime  @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String? @db.Text
+  id_token          String? @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Location {
+  id               String   @id @default(cuid())
+  googleLocationId String   @unique
+  name             String
+  address          String?
+  tonePreference   String   @default("professionnel")
+  autoReply5Stars  Boolean  @default(false)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews          Review[]
+  createdAt        DateTime @default(now())
+}
+
+model Review {
+  id             String    @id @default(cuid())
+  googleReviewId String    @unique
+  authorName     String
+  authorPhoto    String?
+  rating         Int
+  comment        String?   @db.Text
+  reply          String?   @db.Text
+  isReplied      Boolean   @default(false)
+  sentiment      String?   
+  keywords       String[]  
+  locationId     String
+  location       Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  reviewCreated  DateTime
+  createdAt      DateTime  @default(now())
+}
